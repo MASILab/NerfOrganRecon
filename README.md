@@ -27,6 +27,8 @@ TODO
 
 ## How to Run
 
+### Setup
+
 First step is to create an output directory and put your `.mp4` file into it. Also create a `temp` directory that will be used later:
 
 ```
@@ -34,6 +36,8 @@ mkdir OUTPUTS TEMP
 mv </path/to/mp4> OUTPUTS
 ```
 ***
+### Preprocessing
+
 Next, you will need do some preprocessing of the video. First step is to subsample the video into separate images:
 
 ```
@@ -61,6 +65,9 @@ Next is to run carvekit to mask out the object in each image frame. The backgrou
 singularity exec -e --contain --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/tmp -B outputs:/OUTPUTS nerf2mesh.simg bash -c "source /CARVEKIT/carvekit/bin/activate; bash /SCRIPTS/run_carvekit.sh /OUTPUTS"
 ```
 ***
+
+### Training nerf2mesh model
+
 Now that carvekit is run, we can train the nerf2mesh model. For each specific `Group` you have created, run the command:
 ```
 singularity exec -e --contain --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/tmp -B OUTPUTS:/OUTPUTS -B  nerf2mesh.simg python3 /NERF2MESH/nerf2mesh/main.py /OUTPUTS/GroupGROUPNUM --workspace /OUTPUTS/GroupGROUPNUM/part1 -O --data_format colmap --bound 1 --dt_gamma 0 --stage 0 --clean_min_f 16 --clean_min_d 10 --visibility_mask_dilation 50 --iters 10000 --decimate_target 1e5 --sdf
