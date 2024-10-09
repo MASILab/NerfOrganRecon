@@ -38,7 +38,7 @@ Next, you will need do some preprocessing of the video. First step is to subsamp
 
 ```
 # the ---home flag requires an absolut path. You can get this by running 'readlink -f TEMP' or just knowing what it is
-singularity exec -e --contain --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/tmp -B outputs:/OUTPUTS nerf2mesh.simg python3 /SCRIPTS/subsample_video.py /OUTPUTS --num_frames <NUMBER_OF_FRAMES> --groups <NUMBER_OF_GROUPS>
+singularity exec -e --contain --env QT_QPA_PLATFORM=offscreen --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/tmp -B outputs:/OUTPUTS nerf2mesh.simg xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' python3 /SCRIPTS/subsample_video.py /OUTPUTS --num_frames <NUMBER_OF_FRAMES> --groups <NUMBER_OF_GROUPS>
 ```
 
 This script will subsample the video into separate groups of images, where each group is subsampled equidistantly and sequentially. For instance:
