@@ -1,0 +1,161 @@
+BootStrap: docker
+From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu22.04
+
+%post
+
+    mkdir -p /APPS
+    mkdir -p /INSTALLERS
+    mkdir -p /OUPUTS /INPUTS /CODE
+    
+    # Update package lists
+    apt-get update
+    
+    # Install Python and pip, vim, git, wget
+    apt-get install -y python3 python3-pip vim git wget
+
+    # Install ffmpeg and ffprobe
+    apt-get install -y ffmpeg
+
+    #install cuda toolkit
+    mkdir /CUDA_TOOLKIT
+    cd /CUDA_TOOLKIT
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+    dpkg -i cuda-keyring_1.1-1_all.deb
+    apt-get update
+    apt-get -y install cuda-toolkit-12-4
+
+    #temp set the variables
+    export CUDA_HOME="/usr/local/cuda-12.4"
+    export CUDA_PATH="/usr/local/cuda-12.4"
+    export PATH="$CUDA_HOME/bin:$PATH"
+    export LD_LIBRARY_PATH="/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH"
+
+
+    echo "export PATH=/usr/local/cuda-12.4/bin${PATH:+:${PATH}}" >> /environment
+    echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" >> /environment
+
+    echo "$PATH"
+    echo $LD_LIBRARY_PATH
+    cat /environment
+    
+    # Install PyTorch with CUDA support
+    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+    
+    # Clean up
+    apt-get clean
+
+    #install FSL dependencies
+    apt update  -y && \
+    apt upgrade -y && \
+    apt install -y    \
+      wget            \
+      file            \
+      dc              \
+      mesa-utils      \
+      pulseaudio      \
+      libquadmath0    \
+      libgtk2.0-0     \
+      firefox         \
+      libgomp1 ca-certificates libglu1-mesa libgl1-mesa-glx libsm6 libice6 libxt6 libpng16-16 libxrender1 libxcursor1 libxinerama1 libfreetype6 libxft2 libxrandr2 libgtk2.0-0 libpulse0 libasound2 libcaca0 libopenblas-base bzip2 dc bc
+
+    #for tinycudann install
+    apt install -y build-essential libcudnn8-dev ninja-build cmake g++-10
+    which g++
+    g++ --version
+    which nvcc
+
+
+    ###NERF2MESH
+
+    #github repo
+    mkdir /NERF2MESH
+    cd /NERF2MESH
+    git clone https://github.com/ashawkey/nerf2mesh.git
+    cd nerf2mesh
+
+    #install nerf2mesh requirements
+    pip install rich tqdm ninja numpy scipy lpips pandas trimesh PyMCubes torch-ema dearpygui packaging matplotlib tensorboardX opencv-python imageio imageio-ffmpeg pymeshlab xatlas scikit-learn torchmetrics
+
+    #install torch scatter
+    pip install torch-scatter -f https://data.pyg.org/whl/torch-2.4.1+cu124.html
+
+    #install tinycudann
+    ln -s /usr/lib/x86_64-linux-gnu/libcuda.so /usr/local/cuda-12.4/lib64/libcuda.so
+    export TCNN_CUDA_ARCHITECTURES="75"
+    #pip install git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
+    mkdir /TINYCUDANN
+    cd /TINYCUDANN
+    git clone --recursive https://github.com/nvlabs/tiny-cuda-nn
+    cd tiny-cuda-nn
+    cmake . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    cmake --build build --config RelWithDebInfo -j #run without -j if it is taking too long
+    
+    #pytorch extension
+    #pip install git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
+    ### or install from a local clone
+    cd bindings/torch
+    ls /usr/local/cuda-12.4/lib64/ | grep cuda
+    python3 setup.py install
+    
+     
+
+    # nvdiffrast
+    apt-get update
+    apt-get install -y libegl1-mesa-dev libgles2-mesa-dev libegl1-mesa libgl1-mesa-glx
+    pip install git+https://github.com/NVlabs/nvdiffrast/
+
+    # pytorch3d
+    pip install git+https://github.com/facebookresearch/pytorch3d.git
+
+    # install all extension modules
+    cd /NERF2MESH/nerf2mesh
+    bash scripts/install_ext.sh
+
+    # if you want to install manually, here is an example:
+    cd raymarching
+    python3 setup.py build_ext --inplace # build ext only, do not install (only can be used in the parent directory)
+    pip install . # install to python path (you still need the raymarching/ folder, since this only install the built extension.)
+
+
+    # create carvekit environment
+    apt install -y python3.10-venv
+    mkdir /CARVEKIT
+    cd /CARVEKIT
+    python3 -m venv carvekit
+    . carvekit/bin/activate
+    pip install carvekit --extra-index-url https://download.pytorch.org/whl/cu124
+    pip install matplotlib
+
+    # install colmap and xvfb
+    apt-get install -y colmap xvfb
+
+%environment
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export PATH=/usr/local/cuda-12.4/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH #for OpenGL
+
+
+%runscript
+    hascuda=$(python3 -c "import torch; print(torch.cuda.is_available())")
+    if [ $hascuda ]; then
+    echo "This container has PyTorch with CUDA 12.4 support installed."
+    fi
+
+    echo "Singularity created/written by Michael Kim"
+    echo "Oct 7, 2024"
+    echo "CUDA 12.4, torch 2.4.1+cu124"
+
+%files
+
+    /usr/lib/x86_64-linux-gnu/libcuda.so.550.100 /usr/lib/x86_64-linux-gnu/libcuda.so
+    # when running, will need to bind the corresponding driver file to /usr/lib/x86_64-linux-gnu/libcuda.so 
+
+
+    # preprocessing scripts
+    /home-local/kimm58/Singularities/cuda_accre/SCRIPTS/subsample_video.py /SCRIPTS/subsample_video.py
+    /home-local/kimm58/Singularities/cuda_accre/SCRIPTS/run_carvekit.sh /SCRIPTS/run_carvekit.sh
+
+#pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#pip install diffusers invisible_watermark transformers accelerate safetensors
