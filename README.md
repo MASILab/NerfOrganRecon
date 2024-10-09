@@ -53,6 +53,8 @@ singularity exec -e --contain --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/
 
 Keep in mind that GPUs have only so much memory, so trying to extract too many frames per video may result in an OOM error when training the model for surface reconstruction.
 
+Also, note that if you wanted to inspect the images, they would be located in the `outputs/frames` directory. If you look into `outputs/GroupX/images`, you will see a bunch of symlinks that appear invalid but will work in the singularity if you continue using the same directory binding calls (do NOT delete/modify these links/files, as the subsequent steps expect them to be named in a particular way).
+
 ***
 Next is to run carvekit to mask out the object in each image frame. The background should be relatively homogenous to make the extraction much easier. If the video has a lot of background heterogeneity, it may result in a worse surface in the end:
 ```
