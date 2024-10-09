@@ -23,7 +23,9 @@ TODO
 
 In order to have compatibility with a newer version of torch and CUDA, some of the source code was changed slightly from the original repository. It did not affect the results in any way when tested. The changes are as follows:
 
-TODO
+- changed all lines in `/NERF2MESH/nerf2mesh/meshutils.py` to be `pml.PureValue` instead of `pml.AbsoluteValue` as the `pymeshlab` Classes changed names
+  
+- changed lines in `/NERF2MESH/nerf2mesh/nerf/renderer.py` in the function `mark_unseen_triangles()` from `RasterizeGLContext(db=False)` to `RasterizeCudaContext()` to prevent having to access OpenGL in the singularity. Also made the same change on line 128 for the same file. If this ends up causing an issue, you may also be able to run the nerf2mesh training code by calling `xvfb-run` similar to the preprocessing script and change the lines back to the original code.
 
 ## How to Run
 
