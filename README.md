@@ -80,6 +80,13 @@ When running, will need to bind the corresponding driver file to `/usr/lib/x86_6
 ```
 singularity exec -e --contain --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/tmp -B /usr/lib/x86_64-linux-gnu/libcuda.so.XXX.XXX:/usr/lib/x86_64-linux-gnu/libcuda.so OUTPUTS:/OUTPUTS nerf2mesh.simg python3 /NERF2MESH/nerf2mesh/main.py /OUTPUTS/Group1 --workspace /OUTPUTS/Group1/part1 -O --data_format colmap --bound 1 --dt_gamma 0 --stage 0 --clean_min_f 16 --clean_min_d 10 --visibility_mask_dilation 50 --iters 10000 --decimate_target 1e5 --sdf
 ```
+
+If you encounter an error regarding `pymeshlab` and an `Undefined symbol`, then you will need to alter the call slightly: (EDIT: should be fixed now where this doesn't happen)
+
+```
+singularity exec -e --contain --nv --home /fs5/p_masi/choc8/NeRFsingularityTest/TEMP -B /tmp:/tmp -B /usr/lib/x86_64-linux-gnu/libcuda.so.550.107.02:/usr/lib/x86_64-linux-gnu/libcuda.so -B outputs:/OUTPUTS nerf2mesh.simg bash -c "export LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/pymeshlab/lib:$LD_LIBRARY_PATH; python3 /NERF2MESH/nerf2mesh/main.py /OUTPUTS/Group1 --workspace /OUTPUTS/Group1/part1 -O --data_format colmap --bound 1 --dt_gamma 0 --stage 0 --clean_min_f 16 --clean_min_d 10 --visibility_mask_dilation 50 --iters 10000 --decimate_target 1e5 --sdf"
+```
+
 ***
 If the above runs successfully, you should be able to run part2 as well with a very similar command (part2 refines the mesh further):
 ```
