@@ -135,6 +135,7 @@ From: nvidia/cuda:12.6.0-cudnn-runtime-ubuntu22.04
     export PATH=/usr/local/cuda-12.4/bin:$PATH
     export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH #for OpenGL
+    export LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/pymeshlab/lib:$LD_LIBRARY_PATH #need this sometimes
 
 
 %runscript
