@@ -61,6 +61,14 @@ Keep in mind that GPUs have only so much memory, so trying to extract too many f
 
 Also, note that if you wanted to inspect the images, they would be located in the `outputs/frames` directory. If you look into `outputs/GroupX/images`, you will see a bunch of symlinks that appear invalid but will work in the singularity if you continue using the same directory binding calls (do NOT delete/modify these links/files, as the subsequent steps expect them to be named in a particular way).
 
+EDIT: Please note that sometimes the above command to separate the video into separate images may throw some errors. If you are running into issues, please try modifying the command as follows:
+
+```
+singularity exec -e --contain --nv --home </absolute/path/to/TEMP/dir> -B /tmp:/tmp -B outputs:/OUTPUTS nerf2mesh.simg bash -c "export DISPLAY=:1; export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH; export QT_QPA_PLATFORM=offscreen; python3 /SCRIPTS/subsample_video.py /OUTPUTS --num_frames 1750 --groups 5"
+```
+
+This SHOULD fix the issues (COLMAP needs to see the DISPLAY sometimes even though it should be running in headless mode).
+
 ***
 Next is to run carvekit to mask out the object in each image frame. The background should be relatively homogenous to make the extraction much easier. If the video has a lot of background heterogeneity, it may result in a worse surface in the end:
 ```
